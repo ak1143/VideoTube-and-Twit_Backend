@@ -1,6 +1,8 @@
 # Backend Learning
 
-I am learning backend in the backend.
+Learn backend with me.
+I have provided my step by step learing of backend by writting notes.
+
 - [Model link](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
 
 # Setup Professional Backend
