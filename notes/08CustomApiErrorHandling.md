@@ -213,7 +213,7 @@ The `asyncHandler` function simplifies the handling of asynchronous route handle
 
 ```js
 const asyncHandler = (fn)=> async (req,res,next)=>{
-    try {
+    try { 
         await fn(req,res,next)
     } catch (error) {
         res.status(err.code || 500).json({
