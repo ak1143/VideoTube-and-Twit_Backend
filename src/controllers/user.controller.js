@@ -33,7 +33,7 @@ const registerUser = asyncHandler( async (req,res)=>{
 //  Step 2:
 
     /* 1st way to validate the information
-       check the readme file:-13LogicBuilding.
+       check the readme file:-14LogicBuilding.
     */
 
     // 2nd way || optimalway to validate the information
