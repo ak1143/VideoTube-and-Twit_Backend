@@ -8,7 +8,7 @@ import { ApiResponce } from "../utils/ApiResponce.js"
 const registerUser = asyncHandler( async (req,res)=>{
     
     /*
-    steps for userregistration:-
+    steps for user registration:-
         1.  get the user details from the frontend.
         2.  validation- not empty.
         3.  check if user exist : username,email.
@@ -46,7 +46,7 @@ const registerUser = asyncHandler( async (req,res)=>{
 
 //  Step 3:
 
-    const existedUser=User.findOne({
+    const existedUser=await User.findOne({
         $or:[{userName},{email}]
     });
 
@@ -54,14 +54,21 @@ const registerUser = asyncHandler( async (req,res)=>{
         throw new ApiError(409,"user with this email or username exists please enter another");
     }
 
+    // console.log(req.files);
+
 //  Step 4:
     
     const avatarLocalPath=req.files?.avatar[0]?.path;
-    const coverImageLocalpath=req.files?.coverImage[0]?.path;
-    // console.log(req.files);
+    // const coverImageLocalpath=req.files?.coverImage[0]?.path;
+
+    let coverImageLocalpath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0)
+    {
+        coverImageLocalpath = req.files.coverImage[0].path;
+    }
 
     if(!avatarLocalPath){
-        throw new ApiError(404,"avatar is required");
+        throw new ApiError(404,"avatar is required avtarpath");
     }
 
 //  Step 5:
@@ -81,12 +88,12 @@ const registerUser = asyncHandler( async (req,res)=>{
         coverImage:coverImage?.url || "",
         email,
         password,
-        userName:userName.toLowercase()
+        userName:userName,
     });
 
 //  Step 7:
     
-    const createdUser=User.findById(user._id).select(
+    const createdUser= await User.findById(user._id).select(
         "-password -refreshToken"
     );
 
@@ -94,7 +101,6 @@ const registerUser = asyncHandler( async (req,res)=>{
 
     if(!createdUser){
         throw new ApiError(500,"something went wrong while registring the user");
-
     }
 
 //  Step 9:

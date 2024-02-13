@@ -20,8 +20,8 @@ const uploadOnCloudinary=async function(localFilePath){
             resource_type:"auto"
         })
         // the file has been uploaded successfully
-        console.log("file has been uploaded on cloudinary",response.url)
-        console.log(response)
+        console.log("file has been uploaded on cloudinary",response.url);
+        // fs.unlinkSync(localFilePath);
         return response;
 
     } catch (error) {
@@ -36,3 +36,5 @@ export {uploadOnCloudinary};
 // cloudinary.uploader.upload("https://upload.wikimedia.org/wikipedia/commons/a/ae/Olympic_flag.jpg",
 //   { public_id: "olympic_flag" }, 
 //   function(error, result) {console.log(result); });
+
+

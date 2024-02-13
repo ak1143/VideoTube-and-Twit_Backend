@@ -11,7 +11,7 @@ const userSchema=new Schema(
            unique:true,
            required:true,
            trim:true,
-           lowecase:true,
+        //    toLowercase:true,
            index:true 
         },
         email:{
