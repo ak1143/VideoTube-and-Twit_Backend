@@ -1,3 +1,56 @@
+# How to use postman for backend
+
+![mongodb](./images/mongodb.png)
+
+present in mongo db at, database>data services
+
+At Cloudinary - 
+![Cloudinary](./images/cloudinary.png)
+
+unlinkSync from cloudinary
+![Alt text](./images/unlinkSync.png)
+
+req.files on console -
+![reqFile](./images/reqfiles.png)
+
+postman look
+![14postman](./images/14postman.png)
+User response - 
+```json
+{
+    "data": {
+        "_id": "65cb1408eccf6010fbfed53c",
+        "userName": "abhsd",
+        "email": "ai@gmail.com",
+        "fullName": "Abhishek",
+        "avatar": "http://res.cloudinary.com/dx01xk4eh/image/upload/v1707807750/ivugbmwzazrhtse8tdqu.jpg",
+        "coverImage": "http://res.cloudinary.com/dx01xk4eh/image/upload/v1707807751/ilcsxobnemjkgljjxs3j.jpg",
+        "createdAt": "2024-02-13T07:02:32.662Z",
+        "updatedAt": "2024-02-13T07:02:32.662Z",
+        "__v": 0
+    },
+    "message": "User registered Successfully",
+    "statusCode": 200,
+    "success": true
+}
+```
+
+what if coverImage not sent?
+
+TypeError: Cannot read properties of undefined 
+
+To resolve - 
+```js
+let coverImageLocalPath;
+  if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
+    coverImageLocalPath=req.files.coverImage[0].path;
+  }
+```
+
+Postman setup done
+
+Final user.controller.js debugged code - 
+```js
 
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
@@ -112,3 +165,5 @@ const registerUser = asyncHandler( async (req,res)=>{
 });
 
 export {registerUser};
+
+```
