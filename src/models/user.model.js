@@ -1,6 +1,7 @@
 import mongoose,{Schema} from "mongoose";
 import bcrypt from "bcrypt";
 import  Jwt  from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 
 // jwt is a bearer token
 
@@ -56,19 +57,30 @@ const userSchema=new Schema(
 userSchema.pre("save",async function(next){
     if(!this.isModified("password")) return next();
 
-    this.password=await bcrypt.hash(this.password,10);
-    next();
-})
+    try {
+        this.password=await bcrypt.hash(this.password,10);
+        next();
+    } catch (error) {
+        throw new ApiError(500,"the error occured at assigning password");
+    }
+});
 
 // check password
 
-userSchema.methods.isPasswordCorrect=async function(password){
-    return await bcrypt.compare(this.password,password);
+userSchema.methods.isPasswordCorrect = async function(password) {
+    try {
+        // Compare the provided password (plaintext) with the hashed password stored in the database
+        return await bcrypt.compare(password, this.password);
+    } catch (error) {
+        // Throw an API error in case of any errors during password checking
+        throw new ApiError(500, "Error occurred at password checking");
+    }
 }
+
 
 // to generate the accesstokens
 
-userSchema.method.generateAccessTokens=function(){
+userSchema.methods.generateAccessTokens=function(){
     return Jwt.sign(
         {
             _id:this._id,
@@ -85,7 +97,7 @@ userSchema.method.generateAccessTokens=function(){
 
 // to generate the refreshtoken
 
-userSchema.method.generateRefreshTokens=function(){
+userSchema.methods.generateRefreshTokens=function(){
     return Jwt.sign(
         {
             _id:this._id

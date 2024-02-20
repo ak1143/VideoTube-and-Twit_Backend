@@ -5,7 +5,6 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponce } from "../utils/ApiResponce.js" 
 
-
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
         
@@ -131,7 +130,7 @@ const registerUser = asyncHandler( async (req,res)=>{
 
 });
 
-const loginUser = asyncHandler(async (res,res)=>{
+const loginUser = asyncHandler(async (req,res)=>{
     
     /*steps for user login:-
 
@@ -148,7 +147,10 @@ const loginUser = asyncHandler(async (res,res)=>{
     const {email,userName,password} = req.body
 
     // 2. check if username or email present
-    if(!userName || !email || !password){
+    // if(!(userName || email )){
+    //     throw new ApiError(400,"username or password is required");
+    // }
+    if(!userName && !email ){
         throw new ApiError(400,"username or password is required");
     }
 
@@ -162,7 +164,8 @@ const loginUser = asyncHandler(async (res,res)=>{
     }
 
     //  4. password check 
-    const isPasswordValid =await user.isPasswordCorrect(password);
+    const isPasswordValid = await user.isPasswordCorrect(password);  
+    console.log(password);
 
     if(!isPasswordValid){
         throw new ApiError(401,"Invalid user credentials");
