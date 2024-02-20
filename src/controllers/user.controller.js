@@ -153,6 +153,9 @@ const loginUser = asyncHandler(async (req,res)=>{
     if(!userName && !email ){
         throw new ApiError(400,"username or password is required");
     }
+    if(!password){
+        throw new ApiError(400,"the pass is not defined");
+    }
 
     //  3. find the username with matching username/email
     const user= await User.findOne({
@@ -164,8 +167,9 @@ const loginUser = asyncHandler(async (req,res)=>{
     }
 
     //  4. password check 
+    console.log(userName+email);
+    console.log("pass"+password);
     const isPasswordValid = await user.isPasswordCorrect(password);  
-    console.log(password);
 
     if(!isPasswordValid){
         throw new ApiError(401,"Invalid user credentials");

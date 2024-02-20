@@ -68,13 +68,7 @@ userSchema.pre("save",async function(next){
 // check password
 
 userSchema.methods.isPasswordCorrect = async function(password) {
-    try {
-        // Compare the provided password (plaintext) with the hashed password stored in the database
         return await bcrypt.compare(password, this.password);
-    } catch (error) {
-        // Throw an API error in case of any errors during password checking
-        throw new ApiError(500, "Error occurred at password checking");
-    }
 }
 
 
