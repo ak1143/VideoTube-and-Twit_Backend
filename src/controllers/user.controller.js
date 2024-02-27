@@ -372,7 +372,19 @@ const updateUserAvatar = asyncHandler ( async(req,res)=>{
         throw new ApiError(400,"The avatar is not uploded on cloudinary");
     }
 
-    // step 5: update the avatar field
+    /* To do :Assignment for deleting the old avatar image
+    // step 5: delete the old avatar image
+    await User.findByIdAndDelete(
+        req.user?._id,
+        {
+            $or :[
+                { avatar : avatar.url }
+            ]
+        }
+    );
+    */
+
+    // step 6: update the avatar field
     const user = User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -383,7 +395,7 @@ const updateUserAvatar = asyncHandler ( async(req,res)=>{
         { new : true }
     ).select("-password");
 
-    // step 6 :return a responce to the user
+    // step 7 :return a responce to the user
     return res
     .status(200)
     .json(
@@ -414,7 +426,9 @@ const updateUserCoverImage =asyncHandler( async(req,res)=>{
         throw new ApiError(400,"the image is not uploaded on cloudinary");
     }
 
-    // step 5: update the coverImage field
+    // To do: assignment delete the old coverImage
+
+    // step 6: update the coverImage field
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -425,6 +439,7 @@ const updateUserCoverImage =asyncHandler( async(req,res)=>{
         { new : true }
     ).select("-password");
 
+    // step 7: return responce
     return res
     .status(200)
     .json(
@@ -438,6 +453,87 @@ const updateUserCoverImage =asyncHandler( async(req,res)=>{
 
 });
 
+const getUserChannelProfile = asyncHandler( async(req,res)=>{
+
+    // step 1: get the username of channel with the help of url
+    const { userName } = req.params
+
+    if(!userName?.trim()){
+        throw new ApiError(400,"username is missing");
+    }
+
+    // step 2: write the aggregate pipelines in oerder to calculate 1. the subcribers of channel 2.all channels subscribed by the user
+    const channel = await User.aggregate([
+        {
+            // stage 1 : for matching all documents that contains same username as provided.
+            $match :{
+                userName : userName?.toLowercase()
+            }
+        },
+        {
+            // stage 2 : joins the documents in order to calculate the count of subcribers for a channel
+            $lookup:{   // it is used in order to join the documents
+                form :"subcriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as :"subcribers"
+            }
+        },
+        {
+            // stage 3: joins the documents in order to calculate the count of channels that is subcribed by the user
+            $lookup:{
+                form:"subcriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subcribedTo"
+            }
+        },
+        {
+            // stage 4: the stage is for adding fields to the responce(DB) as the subscribers count and subcribedTo count 
+            $addFields:{
+
+                subcribersCount:{
+                    $size:"subcribers"
+                },
+
+                ChannelsSubcribedToCount:{
+                    $size:"subcribedTO"
+                },
+
+                isSubcribed:{
+                    $cond: {
+                        if : { $in: [req.user?._id ,  "$subcribers.subcriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            // stage 5: for return responce
+            $project :{
+                fullName : 1,
+                userName : 1,
+                email : 1,
+                avatar : 1,
+                coverImage : 1,
+                subcribersCount : 1,
+                ChannelsSubcribedToCount : 1,
+                isSubcribed : 1
+            }
+        }
+    ]);
+    
+    if(!channel?.length){
+        throw new ApiError(404,"channel deos not exit");
+    }
+
+    return res
+    .status(200)
+    .json ( new ApiResponce(200,channel[0],"the channel fetched successfully!"));
+
+});
+
 export {
     registerUser,
     loginUser,
@@ -447,5 +543,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile
 };
