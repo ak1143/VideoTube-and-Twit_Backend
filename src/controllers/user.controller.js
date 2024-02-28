@@ -213,7 +213,7 @@ const logoutUser = asyncHandler ( async(req,res)=>{
         {
             $set :{
                 // remove refreshToken
-                refreshToken :undefined
+                refreshToken : 1 //before there is refreshToken :undifined
             }
         },
         {
@@ -249,7 +249,7 @@ const RefreshAccessTokens = asyncHandler( async(req,res)=>{
             process.env.REFRESH_TOKEN_SECRET
         );
     
-        const user= await User.findById(decodedToken?.refreshToken);
+        const user= await User.findById(decodedToken?._id);
     
         if(!user){
             throw new ApiError(401,"Invalid refreshToken");
@@ -335,8 +335,8 @@ const updateAccountDetails = asyncHandler ( async(req,res)=>{
         req.user?._id,
         {
             $set:{
-                fullName,
-                email
+                fullName :fullName,
+                email :email
             }
         },
         {new :true} // the informaiton which is being updated that is returned 
@@ -358,6 +358,7 @@ const updateAccountDetails = asyncHandler ( async(req,res)=>{
 const updateUserAvatar = asyncHandler ( async(req,res)=>{
 
     // step 1: take files path 
+    console.log("hello"+req.files);
     const avatarLocalPath = req.file?.path
 
     // step 2: check the file path is there or not
@@ -456,6 +457,7 @@ const updateUserCoverImage =asyncHandler( async(req,res)=>{
 
 const getUserChannelProfile = asyncHandler( async(req,res)=>{
 
+    // console.log(req.params);
     // step 1: get the username of channel with the help of url
     const { userName } = req.params
 
@@ -468,13 +470,13 @@ const getUserChannelProfile = asyncHandler( async(req,res)=>{
         {
             // stage 1 : for matching all documents that contains same username as provided.
             $match :{
-                userName : userName?.toLowercase()
+                userName : userName?.toLowerCase()
             }
         },
         {
             // stage 2 : joins the documents in order to calculate the count of subcribers for a channel
             $lookup:{   // it is used in order to join the documents
-                form :"subcriptions",
+                from :"subcriptions",
                 localField:"_id",
                 foreignField:"channel",
                 as :"subcribers"
@@ -483,9 +485,9 @@ const getUserChannelProfile = asyncHandler( async(req,res)=>{
         {
             // stage 3: joins the documents in order to calculate the count of channels that is subcribed by the user
             $lookup:{
-                form:"subcriptions",
+                from:"subcriptions",
                 localField:"_id",
-                foreignField:"channel",
+                foreignField:"subcriber",
                 as:"subcribedTo"
             }
         },
@@ -493,13 +495,27 @@ const getUserChannelProfile = asyncHandler( async(req,res)=>{
             // stage 4: the stage is for adding fields to the responce(DB) as the subscribers count and subcribedTo count 
             $addFields:{
 
-                subcribersCount:{
-                    $size:"subcribers"
+                subcribersCount:{ 
+                    $cond: [
+                        { $isArray: "$subcribers" }, 
+                        { $size: "$subcribers" }, 0
+                    ]
                 },
 
-                ChannelsSubcribedToCount:{
-                    $size:"subcribedTO"
+                ChannelsSubcribedToCount: { 
+                    $cond: [
+                        { $isArray: "$subcribedTo" }, 
+                        { $size: "$subcribedTo" }, 0
+                    ] 
                 },
+
+                // subcribersCount:{
+                //     $size:"$subcribers"
+                // },
+
+                // ChannelsSubcribedToCount:{
+                //     $size:"$subcribedTO"
+                // },
 
                 isSubcribed:{
                     $cond: {
@@ -558,7 +574,7 @@ const getWatchHistory = asyncHandler( async(req,res)=>{
                 pipeline : [
                     {
                         $lookup :{
-                            form :"user",
+                            from :"user",
                             localField :"owner",
                             foreignField :"_id",
                             as :"owner",
@@ -589,6 +605,8 @@ const getWatchHistory = asyncHandler( async(req,res)=>{
             }
         }
     ]);
+
+    console.log(user);
 
     return res
     .status(200)
