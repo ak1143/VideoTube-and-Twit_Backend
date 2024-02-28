@@ -5,6 +5,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponce } from "../utils/ApiResponce.js" 
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose"
 
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
@@ -534,6 +535,72 @@ const getUserChannelProfile = asyncHandler( async(req,res)=>{
 
 });
 
+const getWatchHistory = asyncHandler( async(req,res)=>{
+    
+    // In order to get the watch history of channel the watchhistory is present in user document.
+    // The watch history is calculated with the help of videos id so the aggeregation(joining of documents) must be done.
+    const user = await User.aggregate([
+        {
+            // stage 1: match or select the fields that needs to be aggregate
+            $match:{
+                _id : new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            // stage 2: write a aggregate pipeline to join the document user and video
+            $lookup :{
+                from :"videos",
+                localField : "watchHistory",
+                foreignField : "_id",
+                as :"watchHistory",
+                // again the field owner in the document video is related to the user so that's why the nexted pipelines need to be declared
+                // also called as sub-pipelines.
+                pipeline : [
+                    {
+                        $lookup :{
+                            form :"user",
+                            localField :"owner",
+                            foreignField :"_id",
+                            as :"owner",
+                            pipeline :[
+                                {
+                                    $project :{
+                                        fullName : 1,
+                                        email :1,
+                                        avatar :1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        // this stage or field addfield is declared in oreder to provied a well-strutured db to the front-end
+                        // the result of above pipelines is in the form of array and in oerder to get the info from the array is quiet time taking
+                        // the easy way to provide that [0] field in the array direct to the document.
+                        // that's why the addfield is intorduced.
+                        $addFields :{
+                            // $first - it gives the firest element from the returend array.
+                            owner :{
+                                $first : "$owner" 
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]);
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponce(
+            200,
+            user[0].watchHistory,
+            "watch history fetched successfully"
+        )
+    );
+});
+
 export {
     registerUser,
     loginUser,
@@ -544,5 +611,6 @@ export {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getWatchHistory
 };
