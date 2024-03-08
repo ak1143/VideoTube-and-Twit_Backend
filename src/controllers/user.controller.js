@@ -161,7 +161,7 @@ const loginUser = asyncHandler(async (req,res)=>{
 
     //  3. find the username with matching username/email
     const user= await User.findOne({
-        $or : [ {userName} , {email} ]
+        $or : [ {userName} , {email} ] 
     });
 
     if(!user){
@@ -605,7 +605,7 @@ const getWatchHistory = asyncHandler( async(req,res)=>{
             }
         }
     ]);
-
+    
     console.log(user);
 
     return res
