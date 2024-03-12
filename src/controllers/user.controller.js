@@ -459,8 +459,9 @@ const getUserChannelProfile = asyncHandler( async(req,res)=>{
 
     // console.log(req.params);
     // step 1: get the username of channel with the help of url
-    const { userName } = req.params
-
+    const { username:userName } = req.params
+    console.log(req.params);
+    console.log(typeof(req.params));
     if(!userName?.trim()){
         throw new ApiError(400,"username is missing");
     }
