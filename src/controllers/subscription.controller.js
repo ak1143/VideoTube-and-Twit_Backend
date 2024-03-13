@@ -11,7 +11,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
     // step 1:get the channelId with the help of url
     const {channelId} = req.params
-    console.log(req.params);
+    // console.log(req.params);
     // step 2: check the user is valid or not
     if(!isValidObjectId(channelId)){
         throw new ApiError(401,"cannot find the channel");
@@ -48,7 +48,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         }
 
         return res
-        .Status(200)
+        .status(200)
         .json(
             new ApiResponce(
                 200,
@@ -65,13 +65,13 @@ const toggleSubscription = asyncHandler(async (req, res) => {
                 channel:channelId
             }
         );
-
+        
         if(!subcribe){
             throw new ApiError(401,"somthing went wrong");
         }
 
         return res
-        .Status(200)
+        .status(200)
         .json(
             new ApiResponce(
                 200,
@@ -85,12 +85,14 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const {channelId} = req.params;
-
+    console.log(req.params);
     if(!isValidObjectId(channelId)){
-        throw new ApiError(401,"the channel is not exists");
+        throw new ApiError(401,"the channel s not exists");
     }
 
-    const channel = await User.findById(channelId);
+    const channel=await User.findById(channelId);
+
+    console.log(channelId);
 
     if(!channel){
         throw new ApiError(401,"the user doen not exists");
@@ -101,7 +103,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         {
             channel:channel?._id
         }
-    ).populate('subscriber');
+    ).populate('subcriber');
 
     // get the subcriber count
     const subcribersCount=await subscription.countDocuments(
@@ -112,7 +114,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
     // return 
     return res
-    .Status(200)
+    .status(200)
     .json(
         new ApiResponce(
             200,
@@ -128,8 +130,10 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
     const { subscriberId } = req.params
 
+    console.log(req.params);
+
     if(!isValidObjectId(subscriberId)){
-        throw new ApiError(400,"the user does not exists");
+        throw new ApiError(400,"the user");
     }
 
     const user=await User.findById(subscriberId);
@@ -151,12 +155,12 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     );
 
     return res
-    .Status(200)
+    .status(200)
     .json(
-        new ApiResponce(
+        new ApiResponce (
             200,
-            {subscribedChannelList,subscribedChannelCount},
-            "successfully retrived the subcribed channel list"
+            {subscribedChannelCount,subscribedChannelList},
+            "successfully retrived channel list and subscribed count"
         )
     );
     
