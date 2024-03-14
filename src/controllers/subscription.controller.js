@@ -1,10 +1,9 @@
-import mongoose, {isValidObjectId} from "mongoose"
+import {isValidObjectId} from "mongoose"
 import {User} from "../models/user.model.js"
 import { subscription } from "../models/subscription.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponce} from "../utils/ApiResponce.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import { registerUser } from "./user.controller.js"
 
 // TODO: toggle subscription
 const toggleSubscription = asyncHandler(async (req, res) => {
