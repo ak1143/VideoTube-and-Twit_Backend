@@ -89,7 +89,7 @@ const registerUser = asyncHandler( async (req,res)=>{
     }
 
     if(!avatarLocalPath){
-        throw new ApiError(404,"avatar is required avtarpath");
+        throw new ApiError(404,"avatar is required avatarpath");
     }
 
 //  Step 5:
