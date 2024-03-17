@@ -10,7 +10,7 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
-
+    
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -113,19 +113,155 @@ const getVideoById = asyncHandler(async (req, res) => {
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
+    const { videoId } = req.params;
     //TODO: update video details like title, description, thumbnail
+    const { title , description } =req.body;
 
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(500,"the video is not available");
+    }
+    // Only the owner can update the video details
+    const video= await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(500,"ssss"); 
+    }
+
+    const user = await User.findOne({
+        refreshToken: req.cookies.refreshToken,
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found")
+    }
+
+    if (!video.owner.equals(user._id.toString())) {
+        throw new ApiError(403, "Only the owner can update video details")
+    }
+
+    if(!title.length>0 || !description.length>0){
+        throw new ApiError(401,"all filed are manditory");
+    }
+
+    // console.log(req.file);
+    const thumbnailPath= req.file?.path;
+    // console.log(thumbnailPath);
+    
+    if(!thumbnailPath){
+        throw new ApiError(401,"please upload the thumbnail");
+    }
+
+    const uploadthumbnailOnCloudinary = await uploadOnCloudinary(thumbnailPath);
+
+    if(!uploadthumbnailOnCloudinary){
+        throw new ApiError(500,"something went wrong while uploading the thumbnail on cloudinary");
+    }
+
+    const updatevideo= await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{
+                thumbnail:uploadthumbnailOnCloudinary.url,
+                title:title,
+                description:description
+            }
+        },
+        {
+            new:true
+        }
+    );
+
+    if(!updatevideo){
+        throw new ApiError(500,"something went wrong");
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponce(
+            200,
+            {
+                updateVideo
+            },
+            "the video details are updated successfully"
+        )
+    );
+    
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
     //TODO: delete video
+    const { videoId } = req.params;
+    if(!videoId){
+        throw new ApiError(400,"videoId can not be fetched from params")
+    }
+    
+    const video = await Video.findById(videoId);
+    console.log(video);
+    if(!video){
+        throw new ApiError(500,"didn't get the video");
+    }
+
+    const user = await User.findOne({
+        refreshToken: req.cookies.refreshToken,
+    })
+    if (!user) {
+        throw new ApiError(404, "User not found")
+    }
+    // console.log(user._id.toString());
+    console.log(video); 
+    //only the owner can delete the video
+    if (video?.owner.equals(user._id.toString())) {
+        await Video.findByIdAndDelete(videoId)
+        return(
+            res
+            .status(200)
+            .json(new ApiResponce(200,{},"Video deleted successfully"))
+        );
+    }else{
+        throw new ApiError(401,"Only user can delete the video")
+    }
+
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
+
     const { videoId } = req.params
 
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(500,"failed to get the video");
+    }
+
+    const video= await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(400,"video is not found");
+    }
+
+    const user=await User.findOne(
+        {
+            refreshToken:req.cookies.refreshToken
+        }
+    );
+
+    if(!user){
+        throw new ApiError(500,"unable to get the user");
+    }
+
+    // only owner can change the publish_status of the video
+    if(video?.owner.equals(user?._id.toString(videoId))){
+        video.isPublished = !video.isPublished;
+        await video.save({validateBeforeSave:false});
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponce(
+                200,
+                video.isPublished,
+                "video publish status toggled successfully"
+            )
+        )
+    }else{
+        throw new ApiError(500,"the user is not accessible to change the status");
+    } 
 });
 
 export {
