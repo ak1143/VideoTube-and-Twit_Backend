@@ -26,10 +26,12 @@ export const verifyJWT = asyncHandler(async(req,_,next)=>{
         }
 
         // add new property to req object 
-        req.user = user ;
+        req.user = user;
         next();
 
     } catch (error) {
         throw new ApiError (401,error?.message || "Invalid accessToken");
     }
+
+    
 });

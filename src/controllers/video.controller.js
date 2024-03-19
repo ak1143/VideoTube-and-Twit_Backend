@@ -10,7 +10,44 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
-    
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400,"please login to access the videos");
+    }
+
+    const user=await User.findOne(
+        {
+            refreshToken:req.cookies.refreshToken
+        }
+    );
+
+    if(!user){
+        throw new ApiError(500,"something went wrong");
+    }
+
+    const pageNo=parseInt(page);
+    const pageVideoLimit=parseInt(limit);
+    const skip=(pageNo-1)*pageVideoLimit;
+
+    const video= await Video.aggregatePaginate(
+        Video.aggregate([
+            {
+                $match:{
+                    $or:[
+                        {
+                            title:{$regex:query , $options:'i'}
+                        },
+                        {
+                            description:{ $regex:query , $options:'i'}
+                        },
+                    ]
+                }
+            },
+            {},
+            { $limit:pageVideoLimit }, 
+            { $skip:skip }
+        ]) 
+    );
+
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
