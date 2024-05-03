@@ -8,11 +8,8 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    const { page = 1, limit = 10, query, sortBy, sortType} = req.query
     //TODO: get all videos based on query, sort, pagination
-    if(!isValidObjectId(userId)){
-        throw new ApiError(400,"please login to access the videos");
-    }
 
     const user=await User.findOne(
         {
@@ -23,31 +20,57 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError(500,"something went wrong");
     }
+    const sort = sortBy ? { [sortBy]: sortType === "desc" ? -1 : 1 } : {};
 
-    const pageNo=parseInt(page);
-    const pageVideoLimit=parseInt(limit);
-    const skip=(pageNo-1)*pageVideoLimit;
+    const videos = await Video.aggregate([
+        {
+            $match: {
+                title: query
+            }
+        },
+        {
+            $skip: (Number(page) - 1) * Number(limit)
+        },
+        {
+            $limit: parseInt(limit)
+        },
+        {
+            $sort: sort
+        },
+        {
+            $project:{
+                id:1,
+                videoFile:1,
+                thumbnail:1,
+                owner:1,
+                title:1,
+                description:1,
+                duration:1,
+                views:1,
+                isPublished:1,
+                createdAt:1,
+                updatedAt:1
+            }
+        }
+    ]);
+    
 
-    const video= await Video.aggregatePaginate(
-        Video.aggregate([
-            {
-                $match:{
-                    $or:[
-                        {
-                            title:{$regex:query , $options:'i'}
-                        },
-                        {
-                            description:{ $regex:query , $options:'i'}
-                        },
-                    ]
-                }
-            },
-            {},
-            { $limit:pageVideoLimit }, 
-            { $skip:skip }
-        ]) 
+    if(!videos){
+        throw new ApiError(500,"something went wrong");
+    }
+
+    console.log(videos)
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponce(
+            200,
+            {videos},
+            "you have successfully fetched all videos"
+        )
     );
-
+    
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
