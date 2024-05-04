@@ -20,13 +20,24 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError(500,"something went wrong");
     }
+
     const sort = sortBy ? { [sortBy]: sortType === "desc" ? -1 : 1 } : {};
+
+    const matchCretaria= query ? { title: { $regex : query ,$options : "i" } } : {}
+
+    //--------rendering all videos of the users published-----
+
+    // const videos=await Video.aggregate([
+    //     {
+    //     }
+    // ])
+
+
+    //-------this is for rendering the videos on the global site--
 
     const videos = await Video.aggregate([
         {
-            $match: {
-                title: query
-            }
+            $match:matchCretaria
         },
         {
             $skip: (Number(page) - 1) * Number(limit)
