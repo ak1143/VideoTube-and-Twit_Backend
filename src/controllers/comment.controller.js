@@ -1,18 +1,73 @@
-import { isValidObjectId } from "mongoose"
+import { isValidObjectId , ObjectId } from "mongoose"
 import {Comment} from "../models/comment.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponce} from "../utils/ApiResponce.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { Video } from "../models/video.model.js"
 import { User } from "../models/user.model.js"
-
+import mongoose from "mongoose"
 
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
     const {videoId} = req.params
-    const {page = 1, limit = 10} = req.query
-    
-    
+    const { page = 1, limit = 10 } = req.query
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(500,"something went wrong");
+    }
+
+    const comments= await Comment.aggregate([
+        {
+            $lookup: {
+                from: 'User',
+                localField: 'owner',
+                foreignField: '_id',
+                as: 'ownerInfo'
+            }
+        },
+        {
+            $match:{
+                video : new mongoose.Types.ObjectId(videoId)
+                // "video" is taken cause the aggregation is form
+                //  "Comment" to "video". then for the comparison taken
+                // the objectid of the videoId as taken in request.
+            }
+        },
+        {
+            $addFields:{
+                comments:{
+                    $cond:[
+                        { $isArray: "$ownerInfo" },
+                        { $size : "$ownerInfo"} , 0
+                    ]
+                }
+            }
+        },
+        {
+            $project:{
+                content:1,
+                owner:1,
+                video:1,
+                comments:1,
+                createdAt:1,
+                updatedAt:1,
+            }
+        }
+    ]);
+
+    // if(!comments?.length){
+    //     throw new ApiError(400,"there are no comments")
+    // }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponce(
+                200,
+                {comments},
+                "we have successfully retrived the comment of the videos"
+        )
+    );
 });
 
 const addComment = asyncHandler(async (req, res) => {
